@@ -472,7 +472,7 @@ func (dr *DelimitedStreamReader) init() error {
 	escapeLen := len(dr.Escape)
 	delimLen := len(dr.Delimiter)
 	delims := escapeLen + delimLen
-	if dr.cached == nil && dr.buffer == nil {
+	if dr.builder == nil && dr.buffer == nil {
 		if bytes.Equal(dr.Escape, dr.Delimiter) {
 			return ErrInvalidEscapeAndDelimiter
 		}
