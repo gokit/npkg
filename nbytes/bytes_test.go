@@ -32,6 +32,10 @@ func BenchmarkBytesWriter(b *testing.B) {
 		Delimiter: []byte("//"),
 	}
 
+	if err := writer.Init(); err != nil {
+		panic(err)
+	}
+
 	var available = len(sentences)
 	for i := 0; i < b.N; i++ {
 		var next = rand.Intn(available - 1)
@@ -48,6 +52,8 @@ func TestMultiStreamReadingAndwriting(t *testing.T) {
 		Escape:    []byte(":/"),
 		Delimiter: []byte("//"),
 	}
+
+	require.NoError(t, writer.Init())
 
 	sentences := []string{
 		"I went into park stream all alone before the isle lands.",
@@ -76,6 +82,8 @@ func TestMultiStreamReadingAndwriting(t *testing.T) {
 		Delimiter: []byte("//"),
 	}
 
+	require.NoError(t, reader.Init())
+
 	for index, sentence := range sentences {
 		res := make([]byte, len(sentence)+10)
 		read, err := reader.Read(res)
@@ -93,6 +101,8 @@ func TestDelimitedStreamWriterWithDelimiterAndEscape(t *testing.T) {
 		Escape:    []byte(":/"),
 		Delimiter: []byte("//"),
 	}
+
+	require.NoError(t, writer.Init())
 
 	data := []byte("Wondering out the :///clouds of endless //streams beyond the shore")
 	written, err := writer.Write(data)
@@ -117,6 +127,8 @@ func TestDelimitedStreamWriterWithAllDelimiter(t *testing.T) {
 		Delimiter: []byte("//"),
 	}
 
+	require.NoError(t, writer.Init())
+
 	data := []byte("Wondering out the ://////////////////////////////////////")
 	written, err := writer.Write(data)
 	require.NoError(t, err)
@@ -139,6 +151,8 @@ func TestDelimitedStreamWriterWithMoreEscapeWithDelimiter(t *testing.T) {
 		Escape:    []byte(":/"),
 		Delimiter: []byte("//"),
 	}
+
+	require.NoError(t, writer.Init())
 
 	data := []byte("Wondering out the :///clouds of endless //streams beyond the shore")
 	written, err := writer.Write(data)
@@ -163,6 +177,8 @@ func TestDelimitedStreamWriterWithDelimiter(t *testing.T) {
 		Delimiter: []byte("//"),
 	}
 
+	require.NoError(t, writer.Init())
+
 	data := []byte("Wondering out the //clouds of endless //streams beyond the shore")
 	written, err := writer.Write(data)
 	require.NoError(t, err)
@@ -185,6 +201,8 @@ func TestDelimitedStreamWriter(t *testing.T) {
 		Escape:    []byte(":/"),
 		Delimiter: []byte("//"),
 	}
+
+	require.NoError(t, writer.Init())
 
 	data := []byte("Wondering out the clouds of endless streams beyond the shore")
 	written, err := writer.Write(data)
@@ -237,7 +255,9 @@ func TestDelimitedStreamWriterWithSet(t *testing.T) {
 			Delimiter: []byte("//"),
 		}
 
-		writer.Write([]byte(spec.Out))
+		require.NoError(t, writer.Init())
+
+		_, _ = writer.Write([]byte(spec.Out))
 
 		_, err := writer.End()
 		require.NoError(t, err)
@@ -292,6 +312,8 @@ func TestDelimitedStreamReaderWithSet(t *testing.T) {
 			Escape:    []byte(":/"),
 			Delimiter: []byte("//"),
 		}
+
+		require.NoError(t, reader.Init())
 
 		res := make([]byte, len(spec.In))
 		read, err := reader.Read(res)

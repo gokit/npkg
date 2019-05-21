@@ -593,11 +593,33 @@ func NewZConn(conn net.Conn, fns ...ZApply) *ZConn {
 		Delimiter:  []byte(defaultDelimiter),
 	}
 
+	if err := zc.streamReader.Init(); err != nil {
+		panic(err)
+	}
+
 	zc.streamWriter = &nbytes.DelimitedStreamWriter{
 		Dest:        zc.conn,
 		WriteBuffer: zc.writeBuffer,
 		Escape:      []byte(defaultEscape),
 		Delimiter:   []byte(defaultDelimiter),
+	}
+
+	if err := zc.streamWriter.Init(); err != nil {
+		panic(err)
+	}
+
+	if err := zc.conn.SetWriteDeadline(zc.nowTime().Add(zc.writeTime)); err != nil {
+		if zc.debug {
+			log.Printf("[Zconn] | %s | Failed to set read timeout: %s", zc.id, err)
+		}
+		panic(err)
+	}
+
+	if err := zc.conn.SetReadDeadline(zc.nowTime().Add(zc.readTime)); err != nil {
+		if zc.debug {
+			log.Printf("[Zconn] | %s | Failed to set read timeout: %s", zc.id, err)
+		}
+		panic(err)
 	}
 
 	zc.handleClosure()
@@ -747,15 +769,6 @@ func (zc *ZConn) handleReadRequest(req *ZPayload) error {
 
 func (zc *ZConn) writeUntil(req *ZPayload) error {
 	var err error
-	if err = zc.conn.SetWriteDeadline(zc.nowTime().Add(zc.writeTime)); err != nil {
-		if zc.debug {
-			log.Printf("[Zconn] | %s | Failed to set read timeout: %s", zc.id, err)
-		}
-		return err
-	}
-
-	// Reset write timeout for connection.
-	defer zc.conn.SetWriteDeadline(noTime)
 
 	for {
 		if zc.isClosed() {
@@ -809,15 +822,6 @@ func (zc *ZConn) writeUntil(req *ZPayload) error {
 
 func (zc *ZConn) readUntil(req *ZPayload) error {
 	var err error
-	if err = zc.conn.SetReadDeadline(zc.nowTime().Add(zc.readTime)); err != nil {
-		if zc.debug {
-			log.Printf("[Zconn] | %s | Failed to set read timeout: %s", zc.id, err)
-		}
-		return err
-	}
-
-	// Reset read timeout for connection.
-	defer zc.conn.SetReadDeadline(noTime)
 
 	for {
 		if zc.isClosed() {

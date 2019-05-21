@@ -92,8 +92,8 @@ func (dw *DelimitedStreamWriter) HardFlush() error {
 // This allows us indicate to giving stream as ending as any other occurrence of giving
 // stream is closed.
 func (dw *DelimitedStreamWriter) End() (int, error) {
-	if err := dw.init(); err != nil {
-		return -1, err
+	if !dw.hasInit() {
+		panic("Uninitialized, ensure to call DelimitedStreamWriter.Init()")
 	}
 
 	var available = dw.cache.Available()
@@ -148,7 +148,8 @@ func (dw *DelimitedStreamWriter) Write(bs []byte) (int, error) {
 	return count, nil
 }
 
-func (dw *DelimitedStreamWriter) init() error {
+// Init initializes giving writer and must be called first of all.
+func (dw *DelimitedStreamWriter) Init() error {
 	escapeLen := len(dw.Escape)
 	delimLen := len(dw.Delimiter)
 	if dw.buffer == nil && dw.cache == nil {
@@ -178,13 +179,18 @@ func (dw *DelimitedStreamWriter) init() error {
 	return nil
 }
 
+func (dw *DelimitedStreamWriter) hasInit() bool {
+	return dw.buffer != nil && dw.escape != nil && dw.cache != nil
+}
+
 // writeByte writes individual byte element into underline stream,
 // ensuring to adequately escape all appearing delimiter within
 // writing stream.
 func (dw *DelimitedStreamWriter) writeByte(b byte) error {
 	escapeLen := len(dw.Escape)
-	if err := dw.init(); err != nil {
-		return err
+
+	if !dw.hasInit() {
+		panic("Uninitialized, ensure to call DelimitedStreamWriter.Init()")
 	}
 
 	// if we have not started buffering normally and we found escape character
@@ -468,7 +474,8 @@ func (dr *DelimitedStreamReader) Read(b []byte) (int, error) {
 	}
 }
 
-func (dr *DelimitedStreamReader) init() error {
+// Init initializes giving reader and must be called.
+func (dr *DelimitedStreamReader) Init() error {
 	escapeLen := len(dr.Escape)
 	delimLen := len(dr.Delimiter)
 	delims := escapeLen + delimLen
@@ -497,11 +504,12 @@ func (dr *DelimitedStreamReader) init() error {
 }
 
 func (dr *DelimitedStreamReader) readTill(space int) (bool, error) {
+	if dr.builder == nil && dr.buffer == nil {
+		panic("Uninitialized, ensure to call DelimitedStreamReader.Init()")
+	}
+
 	escapeLen := len(dr.Escape)
 	delimLen := len(dr.Delimiter)
-	if err := dr.init(); err != nil {
-		return false, err
-	}
 
 	// if we are out of reading space and we have
 	// more elements in cache, then return and

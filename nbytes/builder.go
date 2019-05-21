@@ -56,7 +56,6 @@ func (r *BuildReader) Reset(dontReuse bool) {
 	r.i = -1
 
 	if !dontReuse {
-		r.builder.full = lastBuf
 		r.builder.buf = lastBuf[:0]
 	}
 }
@@ -67,10 +66,12 @@ func (r *BuildReader) Read(b []byte) (n int, err error) {
 		return 0, ErrEOS
 	}
 
-	if r.i <= 0 {
+	if r.i < 0 {
 		r.i++
-		n = 0
-		return
+	}
+
+	if len(r.builder.buf) == 0 {
+		return 0, nil
 	}
 
 	n = copy(b, r.builder.buf[r.i:])
@@ -123,7 +124,6 @@ func (r *BuildReader) WriteByte(b byte) error {
 // Do not copy a non-zero Builder.
 type Builder struct {
 	addr *Builder // of receiver, to detect copies by value
-	full []byte
 	buf  []byte
 }
 
@@ -224,11 +224,6 @@ func (b *Builder) Grow(n int) {
 // Write always returns len(p), nil.
 func (b *Builder) Write(p []byte) (int, error) {
 	b.copyCheck()
-
-	if b.buf == nil && b.full != nil {
-		b.buf = b.full[:0]
-	}
-
 	b.buf = append(b.buf, p...)
 	return len(p), nil
 }
@@ -237,11 +232,6 @@ func (b *Builder) Write(p []byte) (int, error) {
 // The returned error is always nil.
 func (b *Builder) WriteByte(c byte) error {
 	b.copyCheck()
-
-	if b.buf == nil && b.full != nil {
-		b.buf = b.full[:0]
-	}
-
 	b.buf = append(b.buf, c)
 	return nil
 }
