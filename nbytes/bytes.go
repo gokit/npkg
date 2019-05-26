@@ -30,7 +30,7 @@ const (
 //
 // It's not safe for concurrent use.
 type DelimitedStreamWriter struct {
-	// Dest is the Destnation writer where all escaped
+	// Dest is the destination writer where all escaped
 	// byte sequence will be written to.
 	Dest io.Writer
 
